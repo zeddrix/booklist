@@ -16,7 +16,6 @@ class UI {
       <td>${book.isbn}</td>
       <td><a href="#" class="delete">X</a></td>
       `;
-
     list.appendChild(row);
   }
 
@@ -47,19 +46,58 @@ class UI {
   }
 }
 
+// Local Storage
+class Store {
+  static getBooksFromLS() {
+    let books;
+    if (localStorage.getItem("books") === null) {
+      books = [];
+    } else {
+      books = JSON.parse(localStorage.getItem("books"));
+    }
+    return books;
+  }
+
+  static displayBooksFromLS() {
+    const books = Store.getBooksFromLS();
+    books.forEach((book) => {
+      const ui = new UI();
+      ui.addBookToList(book);
+    });
+  }
+
+  static addBookToLS(book) {
+    const books = Store.getBooksFromLS();
+    books.push(book);
+    localStorage.setItem("books", JSON.stringify(books));
+  }
+
+  static removeBookFromLS(isbn) {
+    const books = Store.getBooksFromLS();
+    books.forEach((book, index) => {
+      if (book.isbn === isbn) {
+        books.splice(index, 1);
+      }
+    });
+    localStorage.setItem("books", JSON.stringify(books));
+  }
+}
+
+document.addEventListener("DOMContentLoaded", Store.displayBooksFromLS);
+
 document.querySelector("#book-form").addEventListener("submit", (e) => {
   const title = document.querySelector("#title").value;
   const author = document.querySelector("#author").value;
   const isbn = document.querySelector("#isbn").value;
 
   const book = new Book(title, author, isbn);
-
   const ui = new UI();
 
   if (title === "" || author === "" || isbn === "") {
     ui.showAlert("Please fill up all fields", "error");
   } else {
     ui.addBookToList(book);
+    Store.addBookToLS(book);
     ui.showAlert("Book Added!", "success");
     ui.clearFields();
   }
@@ -70,7 +108,10 @@ document.querySelector("#book-form").addEventListener("submit", (e) => {
 document.querySelector("#book-list").addEventListener("click", (e) => {
   const ui = new UI();
   ui.deleteBook(e.target);
+  Store.removeBookFromLS(
+    e.target.parentElement.previousElementSibling.textContent
+  );
+  //   console.log("ISBN: ", e.target.parentElement.previousElementSibling.textContent);
   ui.showAlert("Book Removed.", "success");
-
   e.preventDefault();
 });
